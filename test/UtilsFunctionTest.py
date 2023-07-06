@@ -1,10 +1,12 @@
 import unittest
 import cv2
-
+import numpy as np
 from utils.read_data import read_data
 from utils.transfer_coordinate_system import cartesian_to_polar
 import matplotlib.pyplot as plt
 from utils.get_middle import get_middle
+from utils.dijkstra import shortest_path
+
 
 class UtilsFunctionTest(unittest.TestCase):
     def test_shape_of_data(self):
@@ -31,6 +33,7 @@ class UtilsFunctionTest(unittest.TestCase):
         data_file = '../data/ttestsrc.bin'
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
         polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
+        x, y = get_middle(img_data=polar_image)
         plt.imshow(polar_image)
         plt.show()
 
@@ -39,6 +42,54 @@ class UtilsFunctionTest(unittest.TestCase):
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
         middle_x, middle_y = get_middle(img_data=image_data)
         self.assertEqual((middle_x, middle_y), (258, 260))
+
+    def test_find_the_shortest_path(self):
+        dummy_map = np.zeros(shape=(10, 10), dtype='double')
+        dummy_map[:, 5] = 100  # created for test, the sixth colum in this matrix is equal to 20.
+        dummy_map[5, 5] = 0
+        dummy_map[5, 6] = 100
+        dummy_map[4, 6] = 100
+        dummy_map[7, 6] = 100
+        the_shortest_path, seen = shortest_path(img_data=dummy_map, begin=(0, 5), end=(9, 5))
+        print(the_shortest_path)
+
+    def test_find_the_shortest_path_matrix(self):
+        dummy_map = np.zeros(shape=(10, 10), dtype='double')
+        dummy_map[:, 5] = 200  # created for test, the sixth colum in this matrix is equal to 20.
+        dummy_map[5, 5] = 0
+        dummy_map[5, 6] = 200
+        dummy_map[4, 6] = 200
+        dummy_map[6, 6] = 200
+        the_shortest_path, seen = shortest_path(img_data=dummy_map, begin=(0, 5), end=(9, 5))
+
+        plt.figure()
+        plt.subplot(1, 3, 1)
+        plt.imshow(dummy_map)
+        cost_matrix = np.zeros_like(dummy_map)
+        for index in seen:
+            cost_matrix[index] = seen[index]
+        plt.subplot(1, 3, 2)
+        plt.imshow(cost_matrix)
+        path_matrix = np.zeros_like(dummy_map)
+        for index in the_shortest_path:
+            path_matrix[index] = 200
+        plt.subplot(1, 3, 3)
+        plt.imshow(path_matrix)
+        plt.show()
+
+    def test_find_the_shortest_path_figure(self):
+        data_file = '../data/ttestsrc.bin'
+        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
+        plt.imshow(polar_image)
+        plt.show()
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(80, 2), end=(31, 509))
+        matrix = np.zeros_like(polar_image)
+        for index in seen:
+            matrix[index] = seen[index]
+
+        plt.imshow(matrix)
+        plt.show()
 
 
 if __name__ == '__main__':
