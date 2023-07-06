@@ -6,6 +6,7 @@ from utils.transfer_coordinate_system import cartesian_to_polar
 import matplotlib.pyplot as plt
 from utils.get_middle import get_middle
 from utils.dijkstra import shortest_path
+from utils.dijkstra import normalize_the_image
 
 
 class UtilsFunctionTest(unittest.TestCase):
@@ -55,11 +56,11 @@ class UtilsFunctionTest(unittest.TestCase):
 
     def test_find_the_shortest_path_matrix(self):
         dummy_map = np.zeros(shape=(10, 10), dtype='double')
-        dummy_map[:, 5] = 200  # created for test, the sixth colum in this matrix is equal to 20.
+        dummy_map[:, 5] = 0.01  # created for test, the sixth colum in this matrix is equal to 20.
         dummy_map[5, 5] = 0
-        dummy_map[5, 6] = 200
-        dummy_map[4, 6] = 200
-        dummy_map[6, 6] = 200
+        dummy_map[5, 6] = 0.01
+        dummy_map[4, 6] = 0.01
+        dummy_map[6, 6] = 0.01
         the_shortest_path, seen = shortest_path(img_data=dummy_map, begin=(0, 5), end=(9, 5))
 
         plt.figure()
@@ -90,6 +91,20 @@ class UtilsFunctionTest(unittest.TestCase):
 
         plt.imshow(matrix)
         plt.show()
+
+    def test_normalize_the_image(self):
+        matrix = np.arange(0, 100, 1, dtype=float)
+        matrix = matrix.reshape(10, 10)
+        print(matrix)
+        normalized_image = normalize_the_image(image_data=matrix, threshold=[0, 0.9])
+        print(normalized_image)
+
+        data_file = '../data/ttestsrc.bin'
+        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        normalized_image = normalize_the_image(image_data=image_data, threshold=[0.01, 0.99])
+        plt.imshow(normalized_image)
+        plt.show()
+
 
 
 if __name__ == '__main__':

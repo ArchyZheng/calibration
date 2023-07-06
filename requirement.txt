@@ -1,0 +1,6 @@
+numpy
+torchvision
+matplot
+opencv-python
+turtle
+mplcursors
