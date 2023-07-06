@@ -1,8 +1,4 @@
-import cv2
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Cursor
-from PIL import Image
-import numpy as np
 from matplotlib.backend_bases import MouseEvent
 
 
@@ -15,6 +11,7 @@ def get_middle(img_data: str) -> (int, int):
 
     def on_click(event: MouseEvent):
         middle.append([event.xdata, event.ydata])
+        print(f"{event.xdata}, {event.ydata}")
 
     fig, ax = plt.subplots()
     ax.imshow(img_data)

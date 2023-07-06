@@ -101,10 +101,28 @@ class UtilsFunctionTest(unittest.TestCase):
 
         data_file = '../data/ttestsrc.bin'
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
-        normalized_image = normalize_the_image(image_data=image_data, threshold=[0.01, 0.99])
+        normalized_image = normalize_the_image(image_data=image_data, threshold=[0.01, 0.999])
         plt.imshow(normalized_image)
         plt.show()
 
+    def test_the_cost_matrix_after_normalize_the_image(self):
+        data_file = '../data/ttestsrc.bin'
+        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        normalized_image = normalize_the_image(image_data=image_data, threshold=[0.01, 0.999])
+        polar_image = cartesian_to_polar(image_tensor=normalized_image, original_point=[258, 260], max_radius=240)
+        polar_image[:, :10] = 0
+        polar_image[252:258, :] = 0
+        plt.imshow(polar_image)
+        plt.show()
+        # the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 33), end=(509, 32))
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
+
+        path_matrix = np.zeros_like(polar_image)
+        for index in the_shortest_path:
+            path_matrix[index] = 200
+
+        plt.imshow(path_matrix)
+        plt.show()
 
 
 if __name__ == '__main__':
