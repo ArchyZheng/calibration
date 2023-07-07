@@ -22,4 +22,34 @@ def polar_to_cartesian(polar_tensor: np.array, original_point: [int, int], max_r
     :param max_radius:
     :param original_point:
     """
-    pass
+    return cv2.linearPolar(polar_tensor, original_point, max_radius, cv2.WARP_INVERSE_MAP)
+
+
+def get_high_value_point(image_picture: np.array, threshold: float) -> list:
+    """
+    this function will return the index of the point which is higher than threshold
+    :param image_picture:
+    :param threshold:
+    """
+    row, col = np.where(image_picture > threshold)
+    candidate = []
+    for index in range(len(row)):
+        candidate.append([row[index], col[index]])
+
+    return candidate
+
+
+
+
+
+def polar_vector_to_cartesian_vector(polar_vector, max_radius: int) -> list:
+    """
+    :TODO This function has some faults
+    :param polar_vector:
+    :param max_radius:
+    """
+    cartesian_vector = []
+    for theta, pho in polar_vector:
+        cartesian_vector.append(cv2.polarToCart(magnitude=pho, angle=theta, angleInDegrees=1))
+
+    return cartesian_vector

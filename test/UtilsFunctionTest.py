@@ -12,6 +12,9 @@ from utils.filtering import generate_gaussian_kernel
 from utils.filtering import convolve2d
 from utils.filtering import convolve1d
 from utils.filtering import generate_one_dimension_kernel
+from utils.transfer_coordinate_system import polar_to_cartesian
+from utils.transfer_coordinate_system import polar_vector_to_cartesian_vector
+from utils.transfer_coordinate_system import get_high_value_point
 
 
 class UtilsFunctionTest(unittest.TestCase):
@@ -237,7 +240,7 @@ class UtilsFunctionTest(unittest.TestCase):
         data_file = '../data/ttestsrc.bin'
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
         polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
-        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(0, 381), end=(512, 380))
 
         curve = []
         for x, y in the_shortest_path:
@@ -259,6 +262,69 @@ class UtilsFunctionTest(unittest.TestCase):
         plt.imshow(original_image)
         plt.show()
 
+    def test_polar_system_to_cartesian(self):
+        data_file = '../data/ttestsrc.bin'
+        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
+        cartesian_image = polar_to_cartesian(polar_tensor=polar_image, original_point=[258, 260], max_radius=240)
+        plt.imshow(cartesian_image)
+        plt.show()
+
+    def test_polar_vector_to_cartesian(self):
+        data_file = '../data/ttestsrc.bin'
+        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
+        plt.imshow(polar_image)
+        plt.show()
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(80, 2), end=(31, 509))
+
+        cartesian_points = polar_vector_to_cartesian_vector(polar_vector=the_shortest_path, max_radius=240)
+
+        path_matrix = np.zeros_like(polar_image)
+        for x, y in cartesian_points:
+            path_matrix[int(x), int(y)] = 200
+
+        plt.imshow(path_matrix)
+        plt.show()
+
+    def test_polar_vector_to_cartesian(self):
+        data_file = '../data/ttestsrc.bin'
+        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
+
+        plt.figure()
+        path_matrix = np.zeros_like(polar_image)
+        for index in the_shortest_path:
+            path_matrix[index] = 200
+        plt.subplot(1, 3, 1)
+        plt.imshow(path_matrix)
+
+        cartesian_image = polar_to_cartesian(polar_tensor=path_matrix, original_point=[258, 260], max_radius=240)
+        plt.subplot(1, 3, 2)
+        plt.imshow(cartesian_image)
+        the_index_of_high = get_high_value_point(image_picture=cartesian_image, threshold=100)
+        path_matrix_reformed = np.zeros_like(cartesian_image)
+        for index in the_index_of_high:
+            path_matrix_reformed[index[0], index[1]] = 200
+        plt.subplot(1, 3, 3)
+        plt.imshow(path_matrix_reformed)
+        plt.show()
+
+
+    def test_pick_the_high_value_point(self):
+        array = np.arange(0, 100, 1)
+        array = array.reshape(10, 10)
+        the_index_of_high= get_high_value_point(image_picture=array, threshold=49)
+        plt.imshow(array)
+        plt.show()
+        matrix = np.zeros_like(array)
+        for index in the_index_of_high:
+            matrix[index[0], index[1]] = 10
+        plt.imshow(matrix)
+        plt.show()
+
+        print(the_index_of_high)
 
 
 if __name__ == '__main__':
