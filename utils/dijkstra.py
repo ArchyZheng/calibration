@@ -39,7 +39,7 @@ def shortest_path(img_data: np.array, begin: [int, int], end: [int, int]) -> np.
         mark_matrix[source_point] = 1
         for bias in direction:
             around_point = tuple(map(lambda a, b: a + b, source_point, bias))
-            if available(around_point) and around_point:  # there is a bug that we can not update the cost after the point is picked into the priority queue.
+            if available(around_point) and around_point:
                 if around_point not in queue:
                     queue.append(around_point)
                 attempt_cost = get_cost(source_point=source_point, around_point=around_point)
@@ -77,10 +77,10 @@ def normalize_the_image(image_data: np.array, threshold: [float, float]) -> np.a
     return (image_data - minimum) / (maximum - minimum) * 255.
 
 
-def get_center_of_mass(vector: np.array, index_list: np.array) -> int:
+def get_center_of_mass(vector: np.array, index_list: np.array):
     """
     return the index of center of mass
     :param vector:
     :param index_list:
     """
-    return int(np.sum(np.multiply(vector, index_list)) / np.sum(vector))
+    return np.sum(np.multiply(vector, index_list)) / np.sum(vector)

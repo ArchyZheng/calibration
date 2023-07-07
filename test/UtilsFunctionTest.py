@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from utils.get_middle import get_middle
 from utils.dijkstra import shortest_path
 from utils.dijkstra import normalize_the_image
+from utils.dijkstra import get_center_of_mass
 
 
 class UtilsFunctionTest(unittest.TestCase):
@@ -15,13 +16,13 @@ class UtilsFunctionTest(unittest.TestCase):
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
         self.assertEqual(image_data.shape, (512, 512))
 
-    def test_image_of_data(self):
+    def test_data_of_image(self):
         data_file = '../data/ttestsrc.bin'
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
         plt.imshow(image_data)
         plt.show()
 
-    def test_cartesian_to_polar_Circle(self):
+    def test_cartesian_to_polar_circle_image(self):
         data_file_name = '../data/img_1.png'
         image_data = cv2.imread(data_file_name, cv2.IMREAD_GRAYSCALE)
         print(image_data.shape)
@@ -30,7 +31,7 @@ class UtilsFunctionTest(unittest.TestCase):
         plt.imshow(polar_image)
         plt.show()
 
-    def test_cartesian_to_polar_calibration(self):
+    def test_cartesian_to_polar_calibration_image(self):
         data_file = '../data/ttestsrc.bin'
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
         polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
@@ -43,16 +44,6 @@ class UtilsFunctionTest(unittest.TestCase):
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
         middle_x, middle_y = get_middle(img_data=image_data)
         self.assertEqual((middle_x, middle_y), (258, 260))
-
-    def test_find_the_shortest_path(self):
-        dummy_map = np.zeros(shape=(10, 10), dtype='double')
-        dummy_map[:, 5] = 100  # created for test, the sixth colum in this matrix is equal to 20.
-        dummy_map[5, 5] = 0
-        dummy_map[5, 6] = 100
-        dummy_map[4, 6] = 100
-        dummy_map[7, 6] = 100
-        the_shortest_path, seen = shortest_path(img_data=dummy_map, begin=(0, 5), end=(9, 5))
-        print(the_shortest_path)
 
     def test_find_the_shortest_path_matrix(self):
         dummy_map = np.zeros(shape=(10, 10), dtype='double')
@@ -78,18 +69,19 @@ class UtilsFunctionTest(unittest.TestCase):
         plt.imshow(path_matrix)
         plt.show()
 
-    def test_find_the_shortest_path_figure(self):
+    def test_find_the_shortest_path_Figure(self):
         data_file = '../data/ttestsrc.bin'
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
         polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
         plt.imshow(polar_image)
         plt.show()
         the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(80, 2), end=(31, 509))
-        matrix = np.zeros_like(polar_image)
-        for index in seen:
-            matrix[index] = seen[index]
+        path_matrix = np.zeros_like(polar_image)
+        for index in the_shortest_path:
+            print(index)
+            path_matrix[index] = 200
 
-        plt.imshow(matrix)
+        plt.imshow(path_matrix)
         plt.show()
 
     def test_normalize_the_image(self):
@@ -108,12 +100,16 @@ class UtilsFunctionTest(unittest.TestCase):
     def test_the_cost_matrix_after_normalize_the_image(self):
         data_file = '../data/ttestsrc.bin'
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        plt.figure()
+        plt.subplot(1, 3, 1)
+        plt.imshow(image_data)
         normalized_image = normalize_the_image(image_data=image_data, threshold=[0.01, 0.999])
         polar_image = cartesian_to_polar(image_tensor=normalized_image, original_point=[258, 260], max_radius=240)
+        # polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
         polar_image[:, :10] = 0
-        polar_image[252:258, :] = 0
+        polar_image[256:260, :] = 0
+        plt.subplot(1, 3, 2)
         plt.imshow(polar_image)
-        plt.show()
         # the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 33), end=(509, 32))
         the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
 
@@ -121,9 +117,58 @@ class UtilsFunctionTest(unittest.TestCase):
         for index in the_shortest_path:
             path_matrix[index] = 200
 
+        plt.subplot(1, 3, 3)
         plt.imshow(path_matrix)
         plt.show()
 
+    def test_center_of_mass_Vector(self):
+        vector = np.array([1, 2, 3, 4, 5])
+        index = np.array([0, 1, 2, 3, 4])
+        mass_index = get_center_of_mass(vector=vector, index_list=index)
+        self.assertEqual(mass_index, 2)
+
+    def test_center_of_mass_figure(self):
+        data_file = '../data/ttestsrc.bin'
+        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        normalized_image = normalize_the_image(image_data=image_data, threshold=[0.01, 0.999])
+        polar_image = cartesian_to_polar(image_tensor=normalized_image, original_point=[258, 260], max_radius=240)
+
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
+
+        new_path = []
+        for x, y in the_shortest_path:
+            vector = polar_image[x, y - 10:y + 10]  # the 10 means the half width of the scope
+            index = np.arange(y - 10, y + 10, 1)
+            mass_index = get_center_of_mass(vector=vector, index_list=index)
+            new_path.append([x, mass_index])
+
+    def test_zoom_a_figure(self):
+        data_file = '../data/ttestsrc.bin'
+        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        normalized_image = normalize_the_image(image_data=image_data, threshold=[0.01, 0.999])
+        polar_image = cartesian_to_polar(image_tensor=normalized_image, original_point=[258, 260], max_radius=240)
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
+
+        new_path = []
+        for x, y in the_shortest_path:
+            vector = polar_image[x, y - 3:y + 3]  # the 10 means the half width of the scope
+            index = np.arange(y - 3, y + 3, 1)
+            mass_index = get_center_of_mass(vector=vector, index_list=index)
+            new_path.append([x, mass_index])
+
+        polar_image = cv2.resize(polar_image, (5120, 512), interpolation=cv2.INTER_NEAREST)
+        plt.imshow(polar_image)
+        plt.show()
+
+        path_image = np.zeros_like(polar_image)
+        for x, y in new_path:
+            path_image[x, int(10 * y)] = 255
+        plt.figure()
+        plt.subplot(1, 2, 1)
+        plt.imshow(path_image)
+        plt.subplot(1, 2, 2)
+        plt.imshow(polar_image)
+        plt.show()
 
 if __name__ == '__main__':
     unittest.main()
