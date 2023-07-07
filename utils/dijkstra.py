@@ -7,6 +7,7 @@ from collections import defaultdict
 def shortest_path(img_data: np.array, begin: [int, int], end: [int, int]) -> np.array:
     """
     return the path recoder, which recode the locations(x, y) from begin point towards the end point in order.
+    see https://www.programiz.com/dsa/dijkstra-algorithm, I had reference the Pseudo code shown on the web.
     :param img_data:
     :param begin: the top of the image
     :param end: the bottom of the image
@@ -31,15 +32,16 @@ def shortest_path(img_data: np.array, begin: [int, int], end: [int, int]) -> np.
     direction = ([0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1])
     mark_matrix = np.zeros_like(img_data)
 
-    queue = deque()
+    queue = deque()  # priority queue
     queue.append(begin)
     while queue:
         source_point = queue.popleft()
         mark_matrix[source_point] = 1
         for bias in direction:
             around_point = tuple(map(lambda a, b: a + b, source_point, bias))
-            if available(around_point) and around_point not in queue:
-                queue.append(around_point)
+            if available(around_point) and around_point:  # there is a bug that we can not update the cost after the point is picked into the priority queue.
+                if around_point not in queue:
+                    queue.append(around_point)
                 attempt_cost = get_cost(source_point=source_point, around_point=around_point)
                 if seen[around_point] > attempt_cost:
                     seen[around_point] = attempt_cost
