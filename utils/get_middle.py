@@ -5,6 +5,8 @@ from matplotlib.backend_bases import MouseEvent
 def get_middle(img_data: str) -> (int, int):
     """
     manually choose the middle point of the image.
+
+    this function will generate a figure. you can choose the point in the figure.
     :param img_data: the data of the image
     """
     middle = []

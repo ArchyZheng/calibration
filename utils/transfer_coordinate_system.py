@@ -18,8 +18,8 @@ def polar_to_cartesian(polar_tensor: np.array, original_point: [int, int], max_r
     """
     convert polar system into cartesian system, according the original point
 
+    :param polar_tensor:
     :param max_radius:
-    :param image_tensor:
     :param original_point:
     """
     pass

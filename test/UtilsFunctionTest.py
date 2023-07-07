@@ -8,6 +8,10 @@ from utils.get_middle import get_middle
 from utils.dijkstra import shortest_path
 from utils.dijkstra import normalize_the_image
 from utils.dijkstra import get_center_of_mass
+from utils.filtering import generate_gaussian_kernel
+from utils.filtering import convolve2d
+from utils.filtering import convolve1d
+from utils.filtering import generate_one_dimension_kernel
 
 
 class UtilsFunctionTest(unittest.TestCase):
@@ -169,6 +173,93 @@ class UtilsFunctionTest(unittest.TestCase):
         plt.subplot(1, 2, 2)
         plt.imshow(polar_image)
         plt.show()
+
+    def test_the_kernel_of_gaussian(self):
+        kernel = generate_gaussian_kernel(l=3, sig=1.)
+        plt.imshow(kernel)
+        plt.show()
+
+    def test_gaussian_filter(self):
+        image_file = "../data/ttestsrc.bin"
+        image_data = read_data(file_name=image_file, width=512, height=512, read_type='double')
+        normalized_image = normalize_the_image(image_data=image_data, threshold=[0.01, 0.999])
+        polar_image = cartesian_to_polar(image_tensor=normalized_image, original_point=[258, 260], max_radius=240)
+
+        plt.figure()
+        kernel = generate_gaussian_kernel(l=5, sig=1.)
+        after_gaussian_filter_image = convolve2d(kernel=kernel, image_data=polar_image)
+        plt.subplot(1, 2, 1)
+        plt.imshow(polar_image)
+        plt.subplot(1, 2, 2)
+        plt.imshow(after_gaussian_filter_image)
+        plt.show()
+
+    def test_filter2D(self):
+        array = np.ones(shape=(100, 100))
+        kernel = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
+        dst = convolve2d(image_data=array, kernel=kernel)
+        print(dst)
+
+    def test_find_path_after_gaussian_filter(self):
+        image_file = "../data/ttestsrc.bin"
+        image_data = read_data(file_name=image_file, width=512, height=512, read_type='double')
+        normalized_image = normalize_the_image(image_data=image_data, threshold=[0.01, 0.999])
+        polar_image = cartesian_to_polar(image_tensor=normalized_image, original_point=[258, 260], max_radius=240)
+
+        plt.figure()
+
+        plt.subplot(1, 3, 1)
+        plt.imshow(polar_image)
+        kernel = generate_gaussian_kernel(l=5, sig=1.)
+        after_gaussian_filter_image = convolve2d(kernel=kernel, image_data=polar_image)
+
+        plt.subplot(1, 3, 2)
+        plt.imshow(after_gaussian_filter_image)
+        the_shortest_path, seen = shortest_path(img_data=after_gaussian_filter_image, begin=(2, 381), end=(511, 380))
+        path_matrix = np.zeros_like(after_gaussian_filter_image)
+        for index in the_shortest_path:
+            path_matrix[index] = 200
+        plt.subplot(1, 3, 3)
+        plt.imshow(path_matrix)
+        plt.show()
+
+    def test_filter(self):
+        curve = np.array([1, 2, 3])
+        kernel = generate_one_dimension_kernel(l=3, sig=1.)
+        new_curve = convolve1d(kernel=kernel, curve=curve)
+        print(new_curve)
+
+    def test_generate_one_dimension_kernel(self):
+        kernel = generate_one_dimension_kernel(l=3, sig=1.)
+        print(kernel)
+
+    def test_smooth_the_curve(self):
+        data_file = '../data/ttestsrc.bin'
+        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
+
+        curve = []
+        for x, y in the_shortest_path:
+            curve.append(y)
+
+        # filter part:
+        kernel = generate_one_dimension_kernel(l=5, sig=2.)
+        new_curve = convolve1d(kernel=kernel, curve=curve)
+        plt.figure()
+        image_matrix = np.zeros_like(polar_image)
+        for index in range(len(the_shortest_path)):
+            image_matrix[the_shortest_path[index][0], int(new_curve[index])] = 200
+        plt.subplot(1, 2, 2)
+        plt.imshow(image_matrix)
+        plt.subplot(1, 2, 1)
+        original_image = np.zeros_like(polar_image)
+        for index in the_shortest_path:
+            original_image[index] = 200
+        plt.imshow(original_image)
+        plt.show()
+
+
 
 if __name__ == '__main__':
     unittest.main()
