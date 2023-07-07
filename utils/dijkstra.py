@@ -2,7 +2,6 @@
 import numpy as np
 from collections import deque
 from collections import defaultdict
-import heapq
 
 
 def shortest_path(img_data: np.array, begin: [int, int], end: [int, int]) -> np.array:
@@ -63,8 +62,8 @@ def normalize_the_image(image_data: np.array, threshold: [float, float]) -> np.a
     :param threshold: choose the maximum and minimum percent
     """
     image_data_one_dimension = image_data.reshape(-1)
-    minimum_index:int = int(image_data.size * threshold[0])
-    maximum_index:int = int(image_data.size * threshold[1])
+    minimum_index: int = int(image_data.size * threshold[0])
+    maximum_index: int = int(image_data.size * threshold[1])
     sorted_image_data = np.sort(image_data_one_dimension)
 
     minimum = sorted_image_data[minimum_index]
@@ -76,5 +75,10 @@ def normalize_the_image(image_data: np.array, threshold: [float, float]) -> np.a
     return (image_data - minimum) / (maximum - minimum) * 255.
 
 
-
-
+def get_center_of_mass(vector: np.array, index_list: np.array) -> int:
+    """
+    return the index of center of mass
+    :param vector:
+    :param index_list:
+    """
+    return int(np.sum(np.multiply(vector, index_list)) / np.sum(vector))
