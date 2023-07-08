@@ -15,6 +15,7 @@ from utils.filtering import generate_one_dimension_kernel
 from utils.transfer_coordinate_system import polar_to_cartesian
 from utils.transfer_coordinate_system import polar_vector_to_cartesian_vector
 from utils.transfer_coordinate_system import get_high_value_point
+from utils.fitting import fitting_ellipse
 
 
 class UtilsFunctionTest(unittest.TestCase):
@@ -114,18 +115,19 @@ class UtilsFunctionTest(unittest.TestCase):
         polar_image = cartesian_to_polar(image_tensor=normalized_image, original_point=[258, 260], max_radius=240)
         # polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
         polar_image[:, :10] = 0
-        polar_image[256:260, :] = 0
+        polar_image[254:262, :] = 200
         plt.subplot(1, 3, 2)
         plt.imshow(polar_image)
         # the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 33), end=(509, 32))
-        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
+        # the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 126), end=(511, 126))
 
         path_matrix = np.zeros_like(polar_image)
         for index in the_shortest_path:
-            path_matrix[index] = 200
+            polar_image[index] = 255.
 
         plt.subplot(1, 3, 3)
-        plt.imshow(path_matrix)
+        plt.imshow(polar_image)
         plt.show()
 
     def test_center_of_mass_Vector(self):
@@ -258,7 +260,7 @@ class UtilsFunctionTest(unittest.TestCase):
         plt.subplot(1, 2, 1)
         original_image = np.zeros_like(polar_image)
         for index in the_shortest_path:
-            original_image[index] = 200
+            original_image[index[0], index[1]] = 200
         plt.imshow(original_image)
         plt.show()
 
@@ -270,16 +272,13 @@ class UtilsFunctionTest(unittest.TestCase):
         plt.imshow(cartesian_image)
         plt.show()
 
-    def test_polar_vector_to_cartesian(self):
+    def test_polar_vector_to_cartesian_vector(self):
         data_file = '../data/ttestsrc.bin'
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
         polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
-        plt.imshow(polar_image)
-        plt.show()
-        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(80, 2), end=(31, 509))
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
 
         cartesian_points = polar_vector_to_cartesian_vector(polar_vector=the_shortest_path, max_radius=240)
-
         path_matrix = np.zeros_like(polar_image)
         for x, y in cartesian_points:
             path_matrix[int(x), int(y)] = 200
@@ -311,11 +310,10 @@ class UtilsFunctionTest(unittest.TestCase):
         plt.imshow(path_matrix_reformed)
         plt.show()
 
-
     def test_pick_the_high_value_point(self):
         array = np.arange(0, 100, 1)
         array = array.reshape(10, 10)
-        the_index_of_high= get_high_value_point(image_picture=array, threshold=49)
+        the_index_of_high = get_high_value_point(image_picture=array, threshold=49)
         plt.imshow(array)
         plt.show()
         matrix = np.zeros_like(array)
@@ -325,6 +323,47 @@ class UtilsFunctionTest(unittest.TestCase):
         plt.show()
 
         print(the_index_of_high)
+
+    def test_fitting_ellipse(self):
+        data_file = '../data/ttestsrc.bin'
+        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
+        plt.imshow(polar_image)
+        plt.show()
+        # the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 126), end=(511, 126))
+
+        plt.figure()
+        path_matrix = np.zeros_like(polar_image)
+        for index in the_shortest_path:
+            path_matrix[index] = 200
+
+        cartesian_image = polar_to_cartesian(polar_tensor=path_matrix, original_point=[258, 260], max_radius=240)
+        np.save('cartesian_image.txt', cartesian_image)
+        plt.imshow(cartesian_image)
+        plt.show()
+        the_index_of_high = get_high_value_point(image_picture=cartesian_image, threshold=100)
+        the_index_of_high = np.array(the_index_of_high)
+
+        parameters_of_ellipse_AMS = fitting_ellipse(the_index_of_high)
+        parameters_of_ellipse = cv2.fitEllipse(the_index_of_high)
+        parameters_of_ellipse_Direct = cv2.fitEllipseDirect(the_index_of_high)
+        print(
+            f"parameters_of_ellipse: {parameters_of_ellipse} \n parameters_of_ellipse_Direct: {parameters_of_ellipse_Direct} \n parameters_of_ellipse_AMS: {parameters_of_ellipse_AMS}")
+
+    def test_draw_an_ellipse(self):
+        img = np.zeros((512, 512, 3), np.uint8)
+        original_image = np.load('cartesian_image.txt.npy')
+        color_image = np.expand_dims(original_image, axis=2).repeat(3, axis=2)
+        plt.imshow(color_image)
+        plt.show()
+
+        c = np.zeros_like(img)
+        img = cv2.ellipse(img=original_image, center=(261, 258), axes=(410 // 2, 354 // 2), angle=89, startAngle=0,
+                          endAngle=360, color=(121, 233, 123),
+                          thickness=1)
+        plt.imshow(img)
+        plt.show()
 
 
 if __name__ == '__main__':
