@@ -29,20 +29,22 @@ def show_the_path_for_each_curve():
         begin_point = int(begin_point_list[index_begin_point])
         region_y = (-10, 10)
         sub_image = polar_image[:, begin_point + region_y[0]: begin_point + region_y[1]]
-        path, seen = shortest_path(img_data=sub_image, begin=(2, -1 * region_y[0]), end=(511, -1 * region_y[0]))
-        the_shortest_path_list.append(path)
+        path, seen = shortest_path(img_data=sub_image, begin=(2, 10), end=(511, 10))
+        the_shortest_path_list.append(np.array(path) + [0, begin_point - 10])
 
+    i = 0
     # 将当前坐标矫正回原图 -> 直角坐标系, 缩放
     for path in the_shortest_path_list:
         temp = np.zeros_like(polar_image)
         for index in path:
             temp[index[0], index[1]] = 200
-        temp = polar_to_cartesian(polar_tensor=temp, original_point=(298, 260), max_radius=240)
+        # temp = polar_to_cartesian(polar_tensor=temp, original_point=(298, 260), max_radius=240)
         # 完成缩放
-        temp = cv2.resize(temp, (512, 512), cv2.INTER_NEAREST)
-
+        # temp = cv2.resize(temp, (512, 512), cv2.INTER_NEAREST)
+        plt.subplot(3, 5, i + 1)
+        i += 1
         plt.imshow(temp)
-        plt.show()
+    plt.show()
 
 
 
