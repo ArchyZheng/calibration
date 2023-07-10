@@ -38,14 +38,13 @@ def show_the_path_for_each_curve():
         temp = np.zeros_like(polar_image)
         for index in path:
             temp[index[0], index[1]] = 200
-        # temp = polar_to_cartesian(polar_tensor=temp, original_point=(298, 260), max_radius=240)
+        temp = polar_to_cartesian(polar_tensor=temp, original_point=(298, 260), max_radius=240)
         # 完成缩放
-        # temp = cv2.resize(temp, (512, 512), cv2.INTER_NEAREST)
+        temp = cv2.resize(temp, (512, 512), cv2.INTER_NEAREST)
         plt.subplot(3, 5, i + 1)
         i += 1
         plt.imshow(temp)
     plt.show()
-
 
 
 if __name__ == "__main__":
