@@ -34,16 +34,34 @@ def show_the_path_for_each_curve():
 
     i = 0
     # 将当前坐标矫正回原图 -> 直角坐标系, 缩放
+    center_list = []
+    axes_list = []
+    angle_list = []
+    temp = np.zeros(shape=(13, 512, 592))
+    i = 0
     for path in the_shortest_path_list:
-        temp = np.zeros_like(polar_image)
         for index in path:
-            temp[index[0], index[1]] = 200
-        temp = polar_to_cartesian(polar_tensor=temp, original_point=(298, 260), max_radius=240)
-        # 完成缩放
-        temp = cv2.resize(temp, (512, 512), cv2.INTER_NEAREST)
-        plt.subplot(3, 5, i + 1)
+            temp[i][index[0], index[1]] = 200
+        cartesian_image = polar_to_cartesian(polar_tensor=temp[i], original_point=(298, 260), max_radius=240)
+    # 完成缩放
+        resized_image = cv2.resize(cartesian_image, (512, 512), cv2.INTER_NEAREST)
+        curve_point = get_high_value_point(image_picture=resized_image, threshold=100)
+        center, axes, angle = cv2.fitEllipse(np.array(curve_point))
+        center = np.array([center[1], center[0]], dtype=int)
+        axes = np.array([axes[1], axes[0]], dtype=int) // 2
+        center_list.append(center)
+        angle_list.append(angle)
+        axes_list.append(axes)
         i += 1
-        plt.imshow(temp)
+    #
+    canva = np.zeros(shape=(512, 512))
+    for index in range(len(center_list)):
+        center = center_list[index]
+        angle = angle_list[index]
+        axes = axes_list[index]
+        cv2.ellipse(img=canva, center=center, axes=axes, angle=angle, thickness=1, startAngle=0, endAngle=360, color=100)
+
+    plt.imshow(canva)
     plt.show()
 
 
