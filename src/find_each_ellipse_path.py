@@ -7,6 +7,7 @@ from utils.transfer_coordinate_system import cartesian_to_polar, polar_to_cartes
 from utils.transfer_coordinate_system import get_high_value_point
 import numpy as np
 
+
 def show_the_path_for_each_curve():
     data_file = '../data/ttestsrc.bin'
     image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
@@ -31,41 +32,41 @@ def show_the_path_for_each_curve():
         path, seen = shortest_path(img_data=sub_image, begin=(2, 10), end=(511, 10))
         the_shortest_path_list.append(np.array(path) + [0, begin_point - 10])
 
-
-
     # 将当前坐标矫正回原图 -> 直角坐标系, 缩放
     center_list = []
     axes_list = []
     angle_list = []
     output_list = []
+    curve_list = []
     for path in the_shortest_path_list:
+        curve = []
         for index in path:
-            output_x, output_y = get_location_of_cartesian(polar_theta=index[0], polar_radius=index[1], polar_center=(298, 260), width=512)
-            output_list.append([output_x, output_y])
-    canva = np.zeros(shape=(2000, 2000))
-    for index in output_list:
-        canva[int(index[0]), int(index[1])] = 200
+            output_x, output_y = get_location_of_cartesian(polar_theta=index[0], polar_radius=index[1] * 240 / 592,
+                                                           polar_center=(298, 260), width=512)
+            output_list.append([output_y, output_x * 512 / 592])
+            curve.append([output_y, output_x * 512 / 592])
+        curve_list.append(curve)
+        curve = np.array(curve, dtype=int)
+        center, axes, angle = cv2.fitEllipse(curve)
+        center_list.append(center)
+        axes = np.array(axes)
+        axes_list.append(axes)
+        angle_list.append(angle)
 
-    plt.imshow(canva)
+    canva = np.zeros(shape=(512, 512))
+    for index in range(len(center_list)):
+        center = center_list[index]
+        center = np.array(center, dtype=int)
+        angle = angle_list[index]
+        axes = axes_list[index]
+        axes = np.array(axes / 2, dtype=int)
+        cv2.ellipse(img=canva, center=[center[1], center[0]], axes=[axes[1], axes[0]], angle=angle, thickness=1, startAngle=0, endAngle=360,
+                    color=100)
+
+    plt.imshow(canva + normalized_image)
     plt.show()
 
-    # 完成缩放
-    #     center, axes, angle = cv2.fitEllipse(np.array(curve_point))
-    #     center = np.array([center[1], center[0]], dtype=int)
-    #     axes = np.array([axes[1], axes[0]], dtype=int) // 2
-    #     center_list.append(center)
-    #     angle_list.append(angle)
-    #     axes_list.append(axes)
-    # #
-    # canva = np.zeros(shape=(512, 512))
-    # for index in range(len(center_list)):
-    #     center = center_list[index]
-    #     angle = angle_list[index]
-    #     axes = axes_list[index]
-    #     cv2.ellipse(img=canva, center=center, axes=axes, angle=angle, thickness=1, startAngle=0, endAngle=360, color=100)
-    #
-    # plt.imshow(canva)
-    # plt.show()
+    # get the dx and dy
 
 
 if __name__ == "__main__":
