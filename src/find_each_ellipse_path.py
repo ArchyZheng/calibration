@@ -84,6 +84,8 @@ def show_the_path_for_each_curve():
 
     vertical_resolution.tofile('vertical_resolution.bin')
     horizontal_resolution.tofile('horizontal_resolution.bin')
+    np.savetxt('vertical_resolution.csv', vertical_resolution, delimiter=',')
+    np.savetxt('horizontal_resolution.csv', horizontal_resolution, delimiter=',')
 
     # plt.imshow(canva + normalized_image)
     # plt.show()
