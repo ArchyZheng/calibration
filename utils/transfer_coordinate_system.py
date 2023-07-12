@@ -65,7 +65,8 @@ def get_y_on_the_circle(x: float, radius: float, center: (int, int)) -> list:
     :param radius:
     :param center: [center_x, center_y] the location is correlated by matrix
     """
-    y_1 = math.sqrt(radius ** 2 - (x - center[0]) ** 2) + center[1]
+    y_without_bais = np.sqrt(radius ** 2 - (x - center[0]) ** 2)
+    y_1 = y_without_bais + center[1]
     return [y_1, 2 * center[1] - y_1]
 
 

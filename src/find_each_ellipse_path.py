@@ -3,7 +3,8 @@ import cv2
 from utils.read_data import read_data
 import matplotlib.pyplot as plt
 from utils.dijkstra import normalize_the_image, shortest_path
-from utils.transfer_coordinate_system import cartesian_to_polar, polar_to_cartesian, get_location_of_cartesian
+from utils.transfer_coordinate_system import cartesian_to_polar, polar_to_cartesian, get_location_of_cartesian, \
+    get_y_on_the_circle
 from utils.transfer_coordinate_system import get_high_value_point
 import numpy as np
 
@@ -54,41 +55,24 @@ def show_the_path_for_each_curve():
         angle_list.append(angle)
 
     canva = np.zeros(shape=(512, 512))
+    curve_to_circle = []
     for index in range(len(center_list)):
         center = center_list[index]
         center = np.array(center, dtype=int)
         angle = angle_list[index]
         axes = axes_list[index]
         axes = np.array(axes / 2, dtype=int)
-        cv2.ellipse(img=canva, center=[center[1], center[0]], axes=[axes[1], axes[0]], angle=angle, thickness=1,
-                    startAngle=0, endAngle=360,
-                    color=100)
-
-    # get the dx and dy
-    canva[260, 258] = 200
-    def get_resolution(interval, save_list: list):
-        for outer_index in range(len(interval) - 1):
-            outer = interval[outer_index]
-            inner_index = outer_index + 1
-            inner = interval[inner_index]
-            save_list.append(1 / (inner - outer))
-    interval_horizontal_list = np.where(canva[260, :] >= 100)
-    horizontal_resolution = []
-    get_resolution(interval_horizontal_list[0], horizontal_resolution)
-    interval_vertical_list = np.where(canva[:, 258] >= 100)
-    vertical_resolution = []
-    get_resolution(interval_vertical_list[0], vertical_resolution)
-
-    vertical_resolution = np.array(vertical_resolution)
-    horizontal_resolution = np.array(horizontal_resolution)
-
-    vertical_resolution.tofile('vertical_resolution.bin')
-    horizontal_resolution.tofile('horizontal_resolution.bin')
-    np.savetxt('vertical_resolution.csv', vertical_resolution, delimiter=',')
-    np.savetxt('horizontal_resolution.csv', horizontal_resolution, delimiter=',')
-
-    # plt.imshow(canva + normalized_image)
-    # plt.show()
+        edge_curve = curve_list[index]
+        for edge_y, edge_x in edge_curve:
+            circle_y = get_y_on_the_circle(x=edge_x, center=center, radius=axes[1])
+            if circle_y[0] is not None:
+                curve_to_circle.append([edge_x, edge_y, circle_y])
+    canva = np.zeros(shape=(512 + 100, 512 + 100))
+    for edge_x, edge_y, circle_y in curve_to_circle:
+        print(f"edge: {edge_x}, {edge_y}, circle_y: {circle_y}")
+        canva[int(edge_x), np.array(circle_y, dtype=int) + 100] = 200
+    plt.imshow(canva)
+    plt.show()
 
 
 if __name__ == "__main__":
