@@ -1,6 +1,7 @@
 # %%
 import cv2
 import numpy as np
+import math
 
 
 def cartesian_to_polar(image_tensor: np.array, original_point: [int, int], max_radius: int) -> np.array:
@@ -54,4 +55,29 @@ def polar_vector_to_cartesian_vector(polar_vector, max_radius: int) -> list:
 
 def get_location_of_cartesian(polar_theta: float, polar_radius: float, polar_center: (int, int), width: int):
     polar_theta = 360 / width * polar_theta
+    polar_theta = np.radians(polar_theta)
     return polar_center[0] + polar_radius * np.cos(polar_theta), polar_center[1] + polar_radius * np.sin(polar_theta)
+
+def get_y_on_the_circle(x: float, radius: float, center: (int, int)) -> list:
+    """
+    Get the y-coordinate by substituting the x-coordinate of the circle.
+    :param x:
+    :param radius:
+    :param center: [center_x, center_y] the location is correlated by matrix
+    """
+    y_1 = math.sqrt(radius ** 2 - (x - center[0]) ** 2) + center[1]
+    return [y_1, 2 * center[1] - y_1]
+
+
+def draw_a_circle(image: np.array, center: (int, int), radius: float):
+    """
+    Draw a circle by modify the numpy array.
+    :param image:
+    :param center:
+    :param radius:
+    """
+    for angle in np.arange(0, 360, 0.01):
+        radiant = np.radians(angle)
+        x = center[0] + radius * np.cos(radiant)
+        y = center[1] + radius * np.sin(radiant)
+        image[int(x), int(y)] = 200
