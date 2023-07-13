@@ -6,17 +6,12 @@ import matplotlib.pyplot as plt
 
 
 class FittingSurface:
-    def __init__(self, file_name: str, width: int, height: int, data_type: str):
+    def __init__(self, image_data: str):
         """
 
-        :param file_name:
-        :param width: bigger than zero
-        :param height: bigger than zero
-        :param data_type: ['double': 64, 'float': 16, 'int': 8] the type of data the number of bits of each data type
+        :param image_data:
         """
-        self.width = width
-        self.height = height
-        self.data = read_data(file_name=file_name, width=width, height=height, read_type=data_type)
+        self.data = image_data
 
     def visualize_point_original_data(self):
         fig = plt.figure()
@@ -30,7 +25,18 @@ class FittingSurface:
         ax.set_zlabel('Z')
         plt.show()
 
-
-if __name__ == "__main__":
-    fitting = FittingSurface(file_name='data/pos.bin', width=512, height=512, data_type='double')
-    fitting.visualize_point_original_data()
+    def obtain_last_n_value_point(self, number: int):
+        """
+        this function will obtain the lowest n point to get the region for fitting.
+        :param number:
+        """
+        sorted_data = np.sort(self.data.reshape(-1))
+        output = []
+        while len(output) < number:
+            location_point_rows, location_point_cols = np.where(self.data == sorted_data[len(output)])
+            point_rows_reshape = location_point_rows.reshape(-1, 1)
+            point_cols_reshape = location_point_cols.reshape(-1, 1)
+            location_point_list = np.concatenate((point_rows_reshape, point_cols_reshape), 1)
+            for point_index in location_point_list:
+                output.append(point_index)
+        return np.array(output)
