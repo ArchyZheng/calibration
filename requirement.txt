@@ -4,3 +4,4 @@ matplot
 opencv-python
 turtle
 mplcursors
+pyvista

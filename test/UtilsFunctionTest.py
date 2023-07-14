@@ -20,14 +20,25 @@ from utils.fitting import fitting_ellipse
 
 class UtilsFunctionTest(unittest.TestCase):
     def test_shape_of_data(self):
-        data_file = '../data/ttestsrc.bin'
+        data_file = '../data/imgxy.bin'
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
         self.assertEqual(image_data.shape, (512, 512))
 
     def test_data_of_image(self):
-        data_file = '../data/ttestsrc.bin'
-        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
-        plt.imshow(image_data)
+        # data_file = '../data/ttestsrc.bin'
+        data_file = '../data/pos_pixel.bin'
+        pos_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        xy_file = '../data/ttestsrc.bin'
+        xy_data = read_data(file_name=xy_file, width=512, height=512, read_type='double')
+        convert_xy_data = xy_data[512::-1, :]
+        plt.subplot(1, 4, 1)
+        plt.imshow(convert_xy_data + pos_data)
+        plt.subplot(1, 4, 2)
+        plt.imshow(convert_xy_data + 2000)
+        plt.subplot(1, 4, 3)
+        plt.imshow(xy_data)
+        plt.subplot(1, 4, 4)
+        plt.imshow(pos_data)
         plt.show()
 
     def test_cartesian_to_polar_circle_image(self):
@@ -83,7 +94,7 @@ class UtilsFunctionTest(unittest.TestCase):
         polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
         plt.imshow(polar_image)
         plt.show()
-        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(80, 2), end=(31, 509))
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 32), end=(511, 32))
         path_matrix = np.zeros_like(polar_image)
         for index in the_shortest_path:
             print(index)
@@ -120,7 +131,7 @@ class UtilsFunctionTest(unittest.TestCase):
         plt.imshow(polar_image)
         # the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 33), end=(509, 32))
         # the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
-        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 126), end=(511, 126))
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 32), end=(511, 32))
 
         path_matrix = np.zeros_like(polar_image)
         for index in the_shortest_path:
@@ -328,20 +339,17 @@ class UtilsFunctionTest(unittest.TestCase):
         data_file = '../data/ttestsrc.bin'
         image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
         polar_image = cartesian_to_polar(image_tensor=image_data, original_point=[258, 260], max_radius=240)
-        plt.imshow(polar_image)
-        plt.show()
-        # the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
-        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 126), end=(511, 126))
+        the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 381), end=(511, 380))
+        # the_shortest_path, seen = shortest_path(img_data=polar_image, begin=(2, 126), end=(511, 126))
 
-        plt.figure()
         path_matrix = np.zeros_like(polar_image)
         for index in the_shortest_path:
             path_matrix[index] = 200
 
         cartesian_image = polar_to_cartesian(polar_tensor=path_matrix, original_point=[258, 260], max_radius=240)
-        np.save('cartesian_image.txt', cartesian_image)
         plt.imshow(cartesian_image)
         plt.show()
+        np.save('cartesian_image.txt', cartesian_image)
         the_index_of_high = get_high_value_point(image_picture=cartesian_image, threshold=100)
         the_index_of_high = np.array(the_index_of_high)
 
@@ -353,16 +361,21 @@ class UtilsFunctionTest(unittest.TestCase):
 
     def test_draw_an_ellipse(self):
         img = np.zeros((512, 512, 3), np.uint8)
+        data_file = '../data/ttestsrc.bin'
+        image_data = read_data(file_name=data_file, width=512, height=512, read_type='double')
+        normalized_image = normalize_the_image(image_data=image_data, threshold=[0.01, 0.999])
+        image_data = np.expand_dims(normalized_image, axis=2).repeat(3, axis=2)
+
         original_image = np.load('cartesian_image.txt.npy')
         color_image = np.expand_dims(original_image, axis=2).repeat(3, axis=2)
-        plt.imshow(color_image)
-        plt.show()
 
         c = np.zeros_like(img)
-        img = cv2.ellipse(img=original_image, center=(261, 258), axes=(410 // 2, 354 // 2), angle=89, startAngle=0,
+        img = cv2.ellipse(img=original_image, center=(258, 261), axes=(410 // 2, 354 // 2), angle=89, startAngle=0,
                           endAngle=360, color=(121, 233, 123),
                           thickness=1)
-        plt.imshow(img)
+        img_circle = cv2.circle(img=img, center=(258, 261), radius=410 // 2, color=(255, 255, 255),
+                                thickness=1)
+        plt.imshow(img_circle)
         plt.show()
 
 

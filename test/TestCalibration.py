@@ -28,15 +28,15 @@ class TestCalibration(unittest.TestCase):
         canva = np.zeros(shape=(512, 512, 3))
 
         ellipse = cv2.ellipse(img=canva, center=(258, 261), axes=(410 // 2, 354 // 2), angle=89, startAngle=0,
-                          endAngle=360, color=(121, 233, 123), thickness=1)
+                              endAngle=360, color=(121, 233, 123), thickness=1)
         ellipse_and_circle = cv2.circle(img=ellipse, center=(258, 261), radius=410 // 2, color=(255, 255, 255),
-                                thickness=1)
+                                        thickness=1)
         plt.imshow(ellipse_and_circle)
         plt.show()
 
     def test_the_image_of_ellipse(self):
         center = (258.4 * 10, 261.00 * 10)
-        axes = (410.6/2 * 10, 354.6/2 * 10)
+        axes = (410.6 / 2 * 10, 354.6 / 2 * 10)
         angle = 89.35
 
         ellipse_curve_output = ellipse_curve(center=center, axes=axes, angle=angle, shape=(5120, 5120), precision=0.1)
@@ -46,12 +46,25 @@ class TestCalibration(unittest.TestCase):
         plt.imshow(canva_trial)
         plt.show()
 
-
-
         canva = np.zeros(shape=(5120, 5120, 2))
-        output = sparse_matrix(ellipse_curve=ellipse_curve_output, circle_center=(258.4, 261.0), circle_radius=410.6 / 2, canva=canva)
+        output = sparse_matrix(ellipse_curve=ellipse_curve_output, circle_center=(258.4, 261.0),
+                               circle_radius=410.6 / 2, canva=canva)
         print(output.shape)
 
+    def test_transform_location(self):
+        from utils.transfer_coordinate_system import get_location_of_cartesian
+
+        center = [512 // 2, 512 // 2]
+        output_list = []
+        for i in range(0, 512, 1):
+            output = get_location_of_cartesian(polar_theta=i, polar_radius=200, polar_center=center, width=512)
+            output_list.append(output)
+
+        canva = np.zeros(shape=(512, 512))
+        for index in output_list:
+            canva[int(index[0]), int(index[1])] = 200
+        plt.imshow(canva)
+        plt.show()
 
 
 if __name__ == '__main__':

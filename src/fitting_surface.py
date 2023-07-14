@@ -5,6 +5,7 @@ from utils.read_data import read_data
 import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
+import torch.nn as nn
 
 
 class FittingSurface:
@@ -75,6 +76,16 @@ class Dataset(Dataset):
 
     def __len__(self):
         return len(self.point_location_list)
+
+
+class Polynomial(nn.Module):
+    def __init__(self, order=3):
+        super().__init__()
+        self.order = order
+
+    def forward(self, intput):
+
+        return
 
 
 def get_the_point_set_in_the_ellipse(ellipse_center: (float, float), ellipse_axes: (float, float),
