@@ -25,18 +25,34 @@ class FittingSurface:
         ax.set_zlabel('Z')
         plt.show()
 
-    def obtain_last_n_value_point(self, number: int):
+    def obtain_last_n_value_point(self, threshold: int, number: int):
         """
         this function will obtain the lowest n point to get the region for fitting.
+        :param threshold: the chosen point should bigger or equal to threshold
         :param number:
         """
         sorted_data = np.sort(self.data.reshape(-1))
+
+        filtered_date_index = sorted_data >= threshold
+        filtered_data = sorted_data[filtered_date_index]
+
         output = []
         while len(output) < number:
-            location_point_rows, location_point_cols = np.where(self.data == sorted_data[len(output)])
+            location_point_rows, location_point_cols = np.where(self.data == filtered_data[len(output)])
             point_rows_reshape = location_point_rows.reshape(-1, 1)
             point_cols_reshape = location_point_cols.reshape(-1, 1)
             location_point_list = np.concatenate((point_rows_reshape, point_cols_reshape), 1)
             for point_index in location_point_list:
                 output.append(point_index)
         return np.array(output)
+
+
+def get_the_point_set_in_the_ellipse(ellipse_center: (float, float), ellipse_axes: (float, float),
+                                     ellipse_angle: float, original_map: (int, int)) -> np.array:
+    """
+    return the candidate of point location which is inside the ellipse.
+    :param ellipse_center:
+    :param ellipse_axes:
+    :param ellipse_angle:
+    :param original_map:
+    """
