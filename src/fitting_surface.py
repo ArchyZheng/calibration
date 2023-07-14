@@ -56,3 +56,27 @@ def get_the_point_set_in_the_ellipse(ellipse_center: (float, float), ellipse_axe
     :param ellipse_angle:
     :param original_map:
     """
+    radians = np.radians(ellipse_angle)
+    rows, cols = original_map
+    mesh_map = np.meshgrid(range(rows), range(cols))
+    center_x, center_y = ellipse_center
+    axes_x, axes_y = ellipse_axes
+
+    inside_point = []
+
+    def ellipse_equation(x, y):
+        new_x = (x - center_x) * np.cos(radians) + (y - center_y) * np.sin(radians)
+        new_y = (x - center_x) * np.sin(radians) - (y - center_y) * np.cos(radians)
+        return (new_x ** 2) / (axes_x ** 2) + (new_y ** 2) / (axes_y ** 2)
+
+    mesh_points = []
+    for x in range(rows):
+        for y in range(cols):
+            mesh_points.append([x, y])
+
+    for x, y in mesh_points:
+        value_after_ellipse_equation = ellipse_equation(x, y)
+        if value_after_ellipse_equation <= 1:
+            inside_point.append([x, y])
+
+    return np.array(inside_point)

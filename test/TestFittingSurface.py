@@ -66,9 +66,9 @@ class TestFittingSurface(unittest.TestCase):
     def test_get_the_set_of_candidate_point(self):
         canva = np.zeros(shape=(512, 512))
         canva = cv2.ellipse(img=canva, center=(240, 236), axes=(362 // 2, 369 // 2), angle=109.59, startAngle=0,
-                            endAngle=360, thickness=2, color=100)
+                            endAngle=360, thickness=1, color=100)
 
-        candidate_point = get_the_point_set_in_the_ellipse(ellipse_center=(240, 236), ellipse_axes=(362 // 2, 369 // 2),
+        candidate_point = get_the_point_set_in_the_ellipse(ellipse_center=(236, 240), ellipse_axes=(369 // 2, 362 // 2),
                                                            ellipse_angle=109.59, original_map=(512, 512))
         for index in candidate_point:
             canva[index[0], index[1]] = 200
