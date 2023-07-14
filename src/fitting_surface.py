@@ -3,6 +3,8 @@ import numpy as np
 import cv2
 from utils.read_data import read_data
 import matplotlib.pyplot as plt
+import torch
+from torch.utils.data import Dataset, DataLoader, random_split
 
 
 class FittingSurface:
@@ -45,6 +47,34 @@ class FittingSurface:
             for point_index in location_point_list:
                 output.append(point_index)
         return np.array(output)
+
+    def split_to_train_and_validation_set(self, candidate_set: np.array, proportion: (float, float)):
+        """
+        Split the data points into training set and validation set according proportion
+        :param candidate_set:
+        :param proportion: training, validation
+        :returns `train_dataset` and `validation_dataset`
+        """
+        dataset = Dataset(point_location_list=candidate_set, point=self.data)
+        length_training_set = len(dataset) * proportion[0]
+        train_dataset, validation_dataset = random_split(dataset,
+                                                         [length_training_set, len(dataset) - length_training_set])
+        return train_dataset, validation_dataset
+
+
+class Dataset(Dataset):
+    def __init__(self, point_location_list: np.array, point: np.array):
+        super().__init__()
+        self.point_location_list = point_location_list
+        self.point = point
+
+    def __getitem__(self, item):
+        index_x = self.point_location_list[item][0]
+        index_y = self.point_location_list[item][1]
+        return self.point[index_x, index_y]
+
+    def __len__(self):
+        return len(self.point_location_list)
 
 
 def get_the_point_set_in_the_ellipse(ellipse_center: (float, float), ellipse_axes: (float, float),
