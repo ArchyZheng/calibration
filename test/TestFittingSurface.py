@@ -17,7 +17,7 @@ class TestFittingSurface(unittest.TestCase):
         file_name = '../data/pos_2.bin'
         image_data = read_data(file_name=file_name, width=512, height=512, read_type='double')
         fitting_process = FittingSurface(image_data=image_data)
-        # fitting_process.visualize_point_original_data()
+        fitting_process.visualize_point_original_data()
         number_list = [6000, 12000, 24000]
 
         get_l2_distance = lambda point_location, center_location: (point_location[0] - center_location[0]) ** 2 + (
@@ -85,6 +85,32 @@ class TestFittingSurface(unittest.TestCase):
         training_set, validation_set = fitting_process.split_to_train_and_validation_set(candidate_set=candidate_point,
                                                                                          proportion=(0.8, 0.2))
 
+    def test_model(self):
+        from src.fitting_surface import Polynomial
+        model = Polynomial()
+        example = [1, 2]
+        output = model(example)
+        print(output)
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_dataloader(self):
+        from torch.utils.data import DataLoader
+        from src.fitting_surface import Polynomial
+        file_name = '../data/pos_2.bin'
+        image_data = read_data(file_name=file_name, width=512, height=512, read_type='double')
+        fitting_process = FittingSurface(image_data=image_data)
+
+        candidate_point = get_the_point_set_in_the_ellipse(ellipse_center=(236, 240), ellipse_axes=(369 // 2, 362 // 2),
+                                                           ellipse_angle=109.59, original_map=(512, 512))
+        training_set, validation_set = fitting_process.split_to_train_and_validation_set(candidate_set=candidate_point,
+                                                                                         proportion=(0.8, 0.2))
+        train_dataloader = DataLoader(dataset=training_set, batch_size=3, shuffle=True)
+        model = Polynomial()
+        for location, target in train_dataloader:
+            prediction = model(location)
+            print(prediction)
+            print(target)
+            break
+
+
+    if __name__ == '__main__':
+        unittest.main()

@@ -57,7 +57,7 @@ class FittingSurface:
         :returns `train_dataset` and `validation_dataset`
         """
         dataset = Dataset(point_location_list=candidate_set, point=self.data)
-        length_training_set = len(dataset) * proportion[0]
+        length_training_set = int(len(dataset) * proportion[0])
         train_dataset, validation_dataset = random_split(dataset,
                                                          [length_training_set, len(dataset) - length_training_set])
         return train_dataset, validation_dataset
@@ -72,20 +72,29 @@ class Dataset(Dataset):
     def __getitem__(self, item):
         index_x = self.point_location_list[item][0]
         index_y = self.point_location_list[item][1]
-        return self.point[index_x, index_y]
+        location = torch.tensor([index_x, index_y])
+        return location, self.point[index_x, index_y]
 
     def __len__(self):
         return len(self.point_location_list)
 
 
 class Polynomial(nn.Module):
-    def __init__(self, order=3):
+    def __init__(self):
         super().__init__()
-        self.order = order
+        self.model = nn.Sequential(
+            nn.Linear(2, 10),
+            nn.ReLU(),
+            nn.Linear(10, 100),
+            nn.ReLU(),
+            nn.Linear(100, 1)
+        )
 
-    def forward(self, intput):
-
-        return
+    def forward(self, x):
+        input_tensor = torch.tensor(x, dtype=torch.float32)
+        # input_tensor = input_tensor
+        out = self.model(input_tensor)
+        return out
 
 
 def get_the_point_set_in_the_ellipse(ellipse_center: (float, float), ellipse_axes: (float, float),
