@@ -18,12 +18,12 @@ def show_the_path_for_each_curve():
     resize_image = cv2.resize(normalized_image, (512, int(512 * coefficient)), cv2.INTER_NEAREST)
 
     coarse_height, coarse_width = resize_image.shape
-    plt.imshow(resize_image)
-    plt.show()
+    # plt.imshow(resize_image)
+    # plt.show()
 
     polar_image = cartesian_to_polar(image_tensor=resize_image, original_point=[233, 296], max_radius=240)
-    plt.imshow(polar_image)
-    plt.show()
+    # plt.imshow(polar_image)
+    # plt.show()
 
     polar_image[:, :10] = 0
     polar_image[140:160, :] = 0
@@ -44,8 +44,8 @@ def show_the_path_for_each_curve():
         for x, y in path:
             canva[x, y] = 200
 
-    plt.imshow(canva)
-    plt.show()
+    # plt.imshow(canva)
+    # plt.show()
 
     # 将当前坐标矫正回原图 -> 直角坐标系, 缩放
     center_list = []
@@ -56,11 +56,12 @@ def show_the_path_for_each_curve():
     for path in the_shortest_path_list:
         curve = []
         for index in path:
-            output_x, output_y = get_location_of_cartesian(polar_theta=index[0], polar_radius=index[1] * 240 / coarse_width,
-                                                           polar_center=(298, 260), width=512)
+            output_x, output_y = get_location_of_cartesian(polar_theta=index[0],
+                                                           polar_radius=index[1] * 240 / coarse_width,
+                                                           polar_center=(296, 233), width=512)
             output_list.append([output_y,
                                 output_x * 512 / coarse_height])  # 592 come from coarse adjustment making picture from ellipse to circle.
-            curve.append([output_y, output_x * 512 / 592])
+            curve.append([output_y, output_x * 512 / coarse_height])
         curve_list.append(curve)
         curve = np.array(curve, dtype=int)
         center, axes, angle = cv2.fitEllipse(curve)
@@ -76,12 +77,16 @@ def show_the_path_for_each_curve():
         angle = angle_list[index]
         axes = axes_list[index]
         axes = np.array(axes / 2, dtype=int)
-        cv2.ellipse(img=canva, center=[center[1], center[0]], axes=[axes[1], axes[0]], angle=angle, thickness=1,
+        cv2.ellipse(img=canva, center=[center[0], center[1]], axes=[axes[0], axes[1]], angle=angle, thickness=1,
                     startAngle=0, endAngle=360,
                     color=100)
 
-    # get the dx and dy
-    canva[260, 258] = 200
+    # plt.imshow(canva + normalized_image)
+    # plt.show()
+
+    # get the resolution of x and y direction
+    center = [256, 233]
+    canva[center[0], center[1]] = 200
 
     def get_resolution(interval, save_list: list):
         for outer_index in range(len(interval) - 1):
@@ -90,10 +95,10 @@ def show_the_path_for_each_curve():
             inner = interval[inner_index]
             save_list.append(1 / (inner - outer))
 
-    interval_horizontal_list = np.where(canva[260, :] >= 100)
+    interval_horizontal_list = np.where(canva[center[0], :] >= 100)
     horizontal_resolution = []
     get_resolution(interval_horizontal_list[0], horizontal_resolution)
-    interval_vertical_list = np.where(canva[:, 258] >= 100)
+    interval_vertical_list = np.where(canva[:, center[1]] >= 100)
     vertical_resolution = []
     get_resolution(interval_vertical_list[0], vertical_resolution)
 
@@ -104,6 +109,37 @@ def show_the_path_for_each_curve():
     horizontal_resolution.tofile('horizontal_resolution.bin')
     np.savetxt('vertical_resolution.csv', vertical_resolution, delimiter=',')
     np.savetxt('horizontal_resolution.csv', horizontal_resolution, delimiter=',')
+
+    # generate the matrix about the location of x and y
+    def mapping(left_most, right_most, mapping):
+        summation = []
+        for x in range(left_most, right_most):
+            resolution_index = -1
+            if x in interval_vertical_list[0]:
+                resolution_index += 1
+
+            summation.append(horizontal_resolution[resolution_index])
+            mapping[x] = sum(summation)
+
+    vertical_map = np.zeros(shape=(512,))
+    left_most = interval_vertical_list[0][0]
+    right_most = interval_vertical_list[0][-1]
+    mapping(left_most=left_most, right_most=right_most, mapping=vertical_map)
+
+    bias = vertical_map[center[0]]
+    vertical_numpy = np.array(vertical_map)
+    vertical_numpy_insert_nan = np.where(vertical_numpy == 0, np.nan, vertical_numpy - bias)
+
+    horizontal_map = np.zeros(shape=(512,))
+    top_most = interval_horizontal_list[0][0]
+    bottom_most = interval_horizontal_list[0][-1]
+    mapping(left_most=top_most, right_most=bottom_most, mapping=horizontal_map)
+    bias = horizontal_map[center[1]]
+
+    horizontal_numpy = np.array(horizontal_map)
+    horizontal_numpy_insert_nan = np.where(horizontal_numpy == 0, np.nan, horizontal_numpy - bias)
+    np.savetxt('horizontal_mapping.csv', horizontal_numpy_insert_nan, delimiter=',')
+    np.savetxt('vertical_mapping.csv', vertical_numpy_insert_nan, delimiter=',')
 
 
 if __name__ == "__main__":
