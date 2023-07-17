@@ -72,14 +72,14 @@ class Dataset(Dataset):
     def __getitem__(self, item):
         index_x = self.point_location_list[item][0]
         index_y = self.point_location_list[item][1]
-        location = torch.tensor([index_x, index_y])
-        return location, self.point[index_x, index_y]
+        location = torch.tensor([index_x, index_y], dtype=torch.float32)
+        return location, torch.tensor(self.point[index_x, index_y], dtype=torch.float32)
 
     def __len__(self):
         return len(self.point_location_list)
 
 
-class Polynomial(nn.Module):
+class MLP(nn.Module):
     def __init__(self):
         super().__init__()
         self.model = nn.Sequential(
@@ -87,14 +87,47 @@ class Polynomial(nn.Module):
             nn.ReLU(),
             nn.Linear(10, 100),
             nn.ReLU(),
+            nn.Linear(100, 100),
+            nn.ReLU(),
             nn.Linear(100, 1)
         )
 
     def forward(self, x):
-        input_tensor = torch.tensor(x, dtype=torch.float32)
+        input_tensor = x
         # input_tensor = input_tensor
         out = self.model(input_tensor)
         return out
+
+
+class Polynomial_1(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.parameter = nn.Parameter(torch.randn(3))
+
+    def forward(self, x):
+        return x[0] * self.parameter[0] + x[1] * self.parameter[1] + self.parameter[2]
+
+
+class Polynomial_2(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.parameter = nn.Parameter(torch.randn(3))
+        self.polynomial_1 = Polynomial_1()
+
+    def forward(self, x):
+        return x[0] ** 2 * self.parameter[0] + x[1] ** 2 * self.parameter[1] + x[0] * x[1] * self.parameter[
+            2] + self.polynomial_1(x)
+
+
+class Polynomial_3(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.parameter = nn.Parameter(torch.randn(4))
+        self.polynomial_3 = Polynomial_3()
+
+    def forward(self, x):
+        return x[0] ** 3 * self.parameter[0] + x[1] ** 3 * self.parameter[1] + x[0] ** 2 * x[1] * self.parameter[2] + x[
+            2] * x[1] ** 2 * self.parameter[3] + self.polynomial_3(x)
 
 
 def get_the_point_set_in_the_ellipse(ellipse_center: (float, float), ellipse_axes: (float, float),
