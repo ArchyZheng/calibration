@@ -17,19 +17,18 @@ def main():
                                                        ellipse_angle=109.59, original_map=(512, 512))
     training_set, validation_set = fitting_process.split_to_train_and_validation_set(candidate_set=candidate_point,
                                                                                      proportion=(0.8, 0.2))
-    train_dataloader = DataLoader(dataset=training_set, batch_size=1, shuffle=True)
-    validation_dataloader = DataLoader(dataset=validation_set, batch_size=1, shuffle=False)
-    wandb_logger = WandbLogger(project='Calibration', name='Polynomial 1')
+    train_dataloader = DataLoader(dataset=training_set, batch_size=256, shuffle=True)
+    validation_dataloader = DataLoader(dataset=validation_set, batch_size=256, shuffle=False)
+    wandb_logger = WandbLogger(project='Calibration', name='MLP')
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     trainer = pl.Trainer(logger=[wandb_logger],
-                         max_epochs=10,
+                         max_epochs=50,
                          accelerator=device)
     creteria = torch.nn.L1Loss()
-    model = Polynomial_1()
+    model = MLP()
 
     train_module = TrainModule(loss=creteria, model=model)
-    # train_module.load_from_checkpoint(checkpoint_path='../src/trial.ckpt')
 
     trainer.fit(model=train_module, train_dataloaders=train_dataloader, val_dataloaders=validation_dataloader)
     wandb_logger.experiment.finish()
