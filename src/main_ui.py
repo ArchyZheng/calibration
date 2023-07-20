@@ -1,12 +1,13 @@
 # %%
 import sys
-
+import cv2
 from PySide6 import QtCore, QtWidgets, QtGui
 from src.Dataloader import Dataloader
 import matplotlib.pyplot as plt
 from PIL import Image, ImageQt
 import numpy as np
 from utils.dijkstra import shortest_path
+from utils.transfer_coordinate_system import get_location_of_cartesian
 
 
 def open_image_by_plt(image_data: np.array):
@@ -18,6 +19,11 @@ class DataloaderUi(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
+        self.new_center = None
+        self.ellipse_curve_list = None
+        self.ellipse_axes_list = None
+        self.ellipse_center_list = None
+        self.ellipse_angle_list = None
         self.shortest_path_list = None
         self.anchor_list = None
         self.file_name = None
@@ -82,6 +88,7 @@ class DataloaderUi(QtWidgets.QWidget):
             self.transform_coordinate_cartesian_to_polar)
         self.button_set_anchor.clicked.connect(self.open_reside_image_for_anchor)
         self.button_find_curve_polar.clicked.connect(self.find_path)
+        self.button_show_ellipse.clicked.connect(self.find_ellipse)
 
     @QtCore.Slot()
     def open_file_list(self):
@@ -155,10 +162,10 @@ class DataloaderUi(QtWidgets.QWidget):
         self.label_of_slider_number.setText(f"Width: {new_width}")
         new_size = [int(new_width), self.dataloader.polar_image.shape[0]]
         self.dataloader.resize_image(original_image=self.dataloader.original_image, new_size=new_size)
-        new_center = [int(self.center_x * new_width // self.dataloader.original_image.shape[0]), int(self.center_y)]
-        print(new_center)
+        self.new_center = [int(self.center_x * new_width // self.dataloader.original_image.shape[0]), int(self.center_y)]
+        print(self.new_center)
         self.dataloader.transform_car_to_polar(
-            center=[new_center[0], new_center[1]],
+            center=[self.new_center[0], self.new_center[1]],
             src=self.dataloader.resized_image,
             radius=int(self.lineEdit_radius.text()))
         self.show_image(image_data=self.dataloader.polar_image, temp_file_name="resize_image.jpg")
@@ -189,6 +196,37 @@ class DataloaderUi(QtWidgets.QWidget):
             for x, y in path:
                 canva[x, y] = 0.2
         plt.imshow(canva + self.dataloader.polar_image)
+        plt.show()
+        self.layout_main.addWidget(self.button_show_ellipse)
+
+    def find_ellipse(self):
+        self.ellipse_center_list = []
+        self.ellipse_axes_list = []
+        self.ellipse_angle_list = []
+        self.ellipse_curve_list = []
+        for path in self.shortest_path_list:
+            curve = []
+            for index in path:
+                radius = int(self.lineEdit_radius.text())
+                new_width = int(self.slider_adjust_width.value())
+                output_x, output_y = get_location_of_cartesian(polar_theta=index[0],
+                                                               polar_radius=index[1] * radius / new_width,
+                                                               polar_center=[self.new_center[1], self.new_center[0]],
+                                                               width=self.dataloader.polar_image.shape[0])
+                output_y_reformed = output_y * self.dataloader.original_image.shape[1] / new_width
+                curve.append([output_y_reformed, output_x])
+            self.ellipse_curve_list.append(curve)
+            curve = np.array(curve, dtype=int)
+            center, axes, angle = cv2.fitEllipse(curve)
+            self.ellipse_center_list.append(center)
+            axes = np.array(axes)
+            self.ellipse_axes_list.append(axes)
+            self.ellipse_angle_list.append(angle)
+        canva = np.zeros_like(self.dataloader.original_image)
+        for curve in self.ellipse_curve_list:
+            for x, y in curve:
+                canva[int(y), int(x)] = 0.2
+        plt.imshow(canva + self.dataloader.original_image)
         plt.show()
 
 
