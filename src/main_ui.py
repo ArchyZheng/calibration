@@ -15,10 +15,21 @@ def open_image_by_plt(image_data: np.array):
     plt.show()
 
 
+def get_resolution(interval, list_save):
+    for outer_index in range(len(interval) - 1):
+        outer = interval[outer_index]
+        inner_index = outer_index + 1
+        inner = interval[inner_index]
+        list_save.append(0.5 / (inner - outer))
+
+
 class DataloaderUi(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
+        self.horizontal_resolution = None
+        self.vertical_resolution = None
+        self.ellipse_canva = None
         self.new_center = None
         self.ellipse_curve_list = None
         self.ellipse_axes_list = None
@@ -33,6 +44,12 @@ class DataloaderUi(QtWidgets.QWidget):
         self.image_navigation_list = []
 
         self.button_select_file = QtWidgets.QPushButton("Click for select file")
+        self.select_button = QtWidgets.QCheckBox("mode of finding center of circle")
+        self.label_circle_center = QtWidgets.QLabel("The center of lens:")
+        self.layout_select_button = QtWidgets.QHBoxLayout()
+
+        self.layout_select_button.addWidget(self.select_button)
+        self.layout_select_button.addWidget(self.label_circle_center)
         self.file_selector = QtWidgets.QFileDialog()
         self.image_window = QtWidgets.QLabel()
         self.button_popup_plt_to_selection_center = QtWidgets.QPushButton(
@@ -80,7 +97,7 @@ class DataloaderUi(QtWidgets.QWidget):
         self.layout_main = QtWidgets.QVBoxLayout(self)
         self.layout_main.addWidget(self.image_window)
         self.layout_main.addWidget(self.button_select_file)
-
+        self.layout_main.addLayout(self.layout_select_button)
         # >>>>>  Layout setting  >>>>>
         self.button_select_file.clicked.connect(self.open_file_list)
         self.button_popup_plt_to_selection_center.clicked.connect(self.popup_plt_image)
@@ -162,7 +179,16 @@ class DataloaderUi(QtWidgets.QWidget):
         self.label_of_slider_number.setText(f"Width: {new_width}")
         new_size = [int(new_width), self.dataloader.polar_image.shape[0]]
         self.dataloader.resize_image(original_image=self.dataloader.original_image, new_size=new_size)
-        self.new_center = [int(self.center_x * new_width // self.dataloader.original_image.shape[0]), int(self.center_y)]
+        # >>>> SOBEL START >>>>
+        if self.select_button.isChecked():
+            self.dataloader.resized_image = cv2.GaussianBlur(self.dataloader.resized_image, (5, 5), 0)
+            # self.dataloader.resized_image = cv2.Sobel(self.dataloader.resized_image, -1, 1, 0)
+            # self.dataloader.resized_image = np.where(self.dataloader.resized_image > 0, 0,
+            #                                          -1 * self.dataloader.resized_image)
+            self.dataloader.resized_image = 255 - self.dataloader.resized_image
+        # <<<< SOBEL END <<<<
+        self.new_center = [int(self.center_x * new_width // self.dataloader.original_image.shape[0]),
+                           int(self.center_y)]
         print(self.new_center)
         self.dataloader.transform_car_to_polar(
             center=[self.new_center[0], self.new_center[1]],
@@ -194,7 +220,7 @@ class DataloaderUi(QtWidgets.QWidget):
         canva = np.zeros_like(self.dataloader.polar_image)
         for path in self.shortest_path_list:
             for x, y in path:
-                canva[x, y] = 0.2
+                canva[x, y] = 200
         plt.imshow(canva + self.dataloader.polar_image)
         plt.show()
         self.layout_main.addWidget(self.button_show_ellipse)
@@ -222,12 +248,73 @@ class DataloaderUi(QtWidgets.QWidget):
             axes = np.array(axes)
             self.ellipse_axes_list.append(axes)
             self.ellipse_angle_list.append(angle)
-        canva = np.zeros_like(self.dataloader.original_image)
-        for curve in self.ellipse_curve_list:
-            for x, y in curve:
-                canva[int(y), int(x)] = 0.2
-        plt.imshow(canva + self.dataloader.original_image)
+        self.ellipse_canva = np.zeros(shape=self.dataloader.original_image.shape)
+        for index in range(len(self.ellipse_center_list)):
+            center = self.ellipse_center_list[index]
+            center = np.array(center, dtype=int)
+            angle = self.ellipse_angle_list[index]
+            axes = self.ellipse_axes_list[index]
+            axes = np.array(axes / 2, dtype=int)
+            if self.select_button.isChecked():
+                cv2.ellipse(img=self.ellipse_canva, center=[center[0], center[1]], axes=[axes[0], axes[1]], angle=angle,
+                            thickness=1,
+                            startAngle=0, endAngle=360,
+                            color=200)
+            else:
+                cv2.ellipse(img=self.ellipse_canva, center=[center[0], center[1]], axes=[axes[0], axes[1]], angle=angle,
+                            thickness=1,
+                            startAngle=0, endAngle=360,
+                            color=200)
+        self.ellipse_canva[int(self.center_y), int(self.center_x)] = 200
+        plt.imshow(self.ellipse_canva + self.dataloader.original_image)
         plt.show()
+        if self.select_button.isChecked():
+            print(self.ellipse_center_list[0])
+            self.label_circle_center.setText(f"The center of lens: {self.ellipse_center_list[0]}")
+        else:
+            self.get_vertical_horizontal_resolution()
+
+    def get_vertical_horizontal_resolution(self):
+        self.vertical_resolution = []
+        self.horizontal_resolution = []
+        assert self.ellipse_canva is not None
+        interval_horizontal_list = np.where(self.ellipse_canva[int(self.center_y), :] >= 100)
+        get_resolution(interval=interval_horizontal_list[0], list_save=self.horizontal_resolution)
+        interval_vertical_list = np.where(self.ellipse_canva[:, int(self.center_x)] >= 100)
+        get_resolution(interval=interval_vertical_list[0], list_save=self.vertical_resolution)
+
+        def mapping(left_most, right_most, mapping, interval_list, resolution_list):
+            summation = []
+            resolution_index = -1
+            for x in range(left_most, right_most + 1):
+                if x in interval_list[0][:] and x != interval_list[0][-1]:
+                    resolution_index += 1
+
+                summation.append(resolution_list[resolution_index])
+                mapping[x] = sum(summation)
+
+        vertical_map = np.zeros(shape=(512,))
+        left_most = interval_vertical_list[0][0]
+        right_most = interval_vertical_list[0][-1]
+        mapping(left_most=left_most, right_most=right_most, mapping=vertical_map, interval_list=interval_vertical_list,
+                resolution_list=self.vertical_resolution)
+
+        bias = vertical_map[int(self.center_y)]
+        vertical_numpy = np.array(vertical_map)
+        vertical_numpy_insert_nan = np.where(vertical_numpy == 0, np.nan, vertical_numpy - bias)
+
+        horizontal_map = np.zeros(shape=(512,))
+        top_most = interval_horizontal_list[0][0]
+        bottom_most = interval_horizontal_list[0][-1]
+        mapping(left_most=top_most, right_most=bottom_most, mapping=horizontal_map,
+                interval_list=interval_horizontal_list,
+                resolution_list=self.horizontal_resolution)
+        bias = horizontal_map[int(self.center_x)]
+        horizontal_numpy = np.array(horizontal_map)
+        horizontal_numpy_insert_nan = np.where(horizontal_numpy == 0, np.nan, horizontal_numpy - bias)
+
+        np.savetxt('../data/horizontal_mapping_1.csv', horizontal_numpy_insert_nan, delimiter=',')
+        np.savetxt('../data/vertical_mapping_1.csv', vertical_numpy_insert_nan, delimiter=',')
 
 
 if __name__ == "__main__":
